@@ -112,13 +112,26 @@ canvas#game{display:block;width:100%;height:auto}
 .stamp{font-size:11px;letter-spacing:4px;color:var(--red);border:1px solid #6b2a2a;display:inline-block;padding:3px 10px;margin-bottom:12px}
 .briefCard h1{font-family:"Black Ops One";font-weight:400;font-size:40px;line-height:.95;color:var(--teal);
   text-shadow:0 0 26px rgba(53,224,196,.3)}
-.sub{color:var(--dim);font-size:15px;margin:8px 0 14px;letter-spacing:1px}
+.sub{color:var(--dim);font-size:15px;margin:8px 0 8px;letter-spacing:1px}
+.progline{font-size:11px;letter-spacing:3px;color:var(--amber);margin-bottom:12px}
+.legend{font-family:"Black Ops One";font-weight:400;color:var(--teal);font-size:13px;letter-spacing:2px;
+  margin-bottom:12px;text-shadow:0 0 14px rgba(53,224,196,.5)}
 .mapsGrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
-.mcard{background:#0b140e;box-shadow:inset 0 0 0 1px #22362a;padding:8px;cursor:pointer;
+.mcard{background:#0b140e;box-shadow:inset 0 0 0 1px #22362a;padding:8px;cursor:pointer;position:relative;
   transition:transform .12s,box-shadow .12s}
 .mcard:hover{transform:translateY(-2px);box-shadow:inset 0 0 0 1px var(--line2)}
 .mcard.sel{box-shadow:inset 0 0 0 2px var(--amber)}
-.mcard canvas{display:block;width:100%;height:auto}
+.mcard.locked{cursor:not-allowed}
+.mcard.locked:hover{transform:none;box-shadow:inset 0 0 0 1px #22362a}
+.mcard.deny{animation:deny .3s}
+@keyframes deny{25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
+.mthumb{position:relative}
+.mthumb canvas{display:block;width:100%;height:auto}
+.mlock{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:4px;background:rgba(5,10,7,.8);font-weight:700;font-size:11px;letter-spacing:2px;color:var(--dim);text-align:center;padding:4px}
+.mlock span{font-size:24px;filter:grayscale(.4)}
+.mdone{position:absolute;top:6px;right:6px;background:rgba(16,34,22,.92);color:var(--green);font-size:10px;
+  font-weight:700;letter-spacing:1px;padding:2px 7px;box-shadow:inset 0 0 0 1px #2f5a38,0 0 10px rgba(141,255,92,.25)}
 .mrow{display:flex;justify-content:space-between;align-items:baseline;margin-top:6px}
 .mname{font-family:"Black Ops One";font-weight:400;font-size:13px;letter-spacing:1px}
 .mstars{color:var(--gold);font-size:12px;letter-spacing:2px;text-shadow:0 0 8px rgba(255,210,63,.5)}
@@ -132,6 +145,12 @@ canvas#game{display:block;width:100%;height:auto}
 .btnBig:hover{filter:brightness(1.12)}
 .btnBig.btnAlt{background:linear-gradient(180deg,#4dd8c0,#1f9a86);color:#06201b;font-size:16px}
 .btnRow{display:flex;gap:10px;margin-top:18px}
+.linkbtn{display:block;margin:12px auto 0;background:none;border:0;cursor:pointer;color:var(--dim);
+  font-family:Rajdhani;font-weight:600;font-size:12px;letter-spacing:2px;text-decoration:underline dotted;padding:4px}
+.linkbtn:hover{color:var(--red)}
+.unlock{margin-top:12px;padding:11px;text-align:center;font-family:"Black Ops One";font-weight:400;font-size:15px;
+  letter-spacing:1px;color:var(--gold);background:#1a1608;box-shadow:inset 0 0 0 1px #6b5a1e;animation:unlockGlow 1.4s infinite}
+@keyframes unlockGlow{50%{box-shadow:inset 0 0 0 1px #ffd23f,0 0 20px rgba(255,210,63,.35)}}
 #endStats{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}
 #endStats div{background:#0b140e;box-shadow:inset 0 0 0 1px #22362a;padding:10px}
 #endStats label{display:block;font-size:10px;letter-spacing:2px;color:var(--dim)}
@@ -149,7 +168,7 @@ canvas#game{display:block;width:100%;height:auto}
 <body>
 <div id="stage">
   <header id="hud">
-    <div class="brand">PROTOCOLE <span>BASTION</span><em id="brandSub">DÉFENSE DE SECTEUR // v3.0</em></div>
+    <div class="brand">PROTOCOLE <span>BASTION</span><em id="brandSub">DÉFENSE DE SECTEUR // v3.1</em></div>
     <div class="hstats">
       <div class="hs lives"><label>VIES</label><b id="uiLives">20</b></div>
       <div class="hs gold"><label>CRÉDITS</label><b id="uiGold">220</b></div>
@@ -174,15 +193,18 @@ canvas#game{display:block;width:100%;height:auto}
         <div class="briefCard">
           <div class="stamp">PRIORITÉ ABSOLUE // SECTEUR 7</div>
           <h1>PROTOCOLE<br><span style="color:var(--amber)">BASTION</span></h1>
-          <p class="sub">Choisissez votre circuit de défense — 20 vagues, une base, zéro renfort.</p>
+          <p class="sub">Choisissez votre circuit — chaque victoire déverrouille le suivant.</p>
+          <div id="progLine" class="progline"></div>
+          <div id="legendLine" class="legend" hidden>★ LÉGENDE DU BASTION — TOUS LES CIRCUITS SÉCURISÉS ★</div>
           <div id="mapsGrid" class="mapsGrid"></div>
           <ul class="rules">
             <li>▸ Sélectionnez une tourelle à droite, puis cliquez sur l'herbe pour la construire.</li>
             <li>▸ Cliquez sur une tourelle posée pour l'améliorer ou la revendre.</li>
-            <li>▸ Chaque intrus qui atteint la base coûte des vies. Lancez la vague en avance pour un bonus.</li>
+            <li>▸ Chaque intrus qui atteint la base coûte des vies. Vague lancée en avance = bonus.</li>
           </ul>
           <div class="keys">[1–5] ARMEMENT &nbsp;•&nbsp; [ESPACE] PAUSE &nbsp;•&nbsp; [ÉCHAP] ANNULER &nbsp;•&nbsp; [ENTRÉE] VAGUE</div>
           <button type="button" id="btnDeploy" class="btnBig">DÉPLOYER ▸</button>
+          <button type="button" id="btnResetProg" class="linkbtn">↺ Réinitialiser la progression</button>
         </div>
       </div>
       <div id="ovEnd" class="ov hidden">
@@ -190,6 +212,7 @@ canvas#game{display:block;width:100%;height:auto}
           <div class="stamp">RAPPORT DE MISSION</div>
           <h1 id="endTitle" style="font-size:36px">—</h1>
           <p class="sub" id="endSub"></p>
+          <div id="endUnlock" class="unlock" hidden></div>
           <div id="endStats"></div>
           <div class="btnRow">
             <button type="button" id="btnReplay" class="btnBig">REJOUER ▸</button>
@@ -219,7 +242,7 @@ canvas#game{display:block;width:100%;height:auto}
         <button type="button" id="btnWave">LANCER LA VAGUE 1 ▸</button>
       </div>
       <div id="tip"><b>Astuce :</b> le GIVRE ralentit tout ce qu'il touche. Combinez-le avec un CANON dans un virage…
-        Chaque circuit a sa stratégie : observez le tracé avant de bâtir.</div>
+        Terminez un circuit pour déverrouiller le suivant !</div>
     </aside>
   </div>
 </div>
@@ -235,21 +258,42 @@ const btnWave=$('btnWave'),towerBox=$('towerBox'),tbName=$('tbName'),tbStats=$('
 const btnUp=$('btnUp'),btnSell=$('btnSell');
 const ovBrief=$('ovBrief'),ovEnd=$('ovEnd'),pauseOv=$('pauseOv'),dangerEl=$('danger');
 
-/* ================= CARTES ================= */
+/* ================= CARTES (campagne) ================= */
 const MAPS=[
-  {name:'PÉRIMÈTRE',diff:2,speedMul:1,goldMul:1,
-   desc:'Le circuit d\u2019entraînement. Virages larges, défense équilibrée.',
-   wc:[[-1,7],[3,7],[3,3],[9,3],[9,10],[15,10],[15,4],[20,4],[20,12],[23,12]]},
-  {name:'SPIRALE',diff:1,speedMul:1.08,goldMul:1,
-   desc:'Longue spirale vers la base centrale. Les ennemis s\u2019éternisent sous vos tirs.',
+  {name:'SPIRALE',diff:1,speedMul:1,goldMul:1,
+   desc:'Longue spirale vers la base centrale. Parfait pour apprendre à bâtir.',
    wc:[[-1,1],[21,1],[21,12],[3,12],[3,4],[18,4],[18,9],[7,9],[7,6],[12,6]]},
-  {name:'SERPENT',diff:3,speedMul:1.2,goldMul:.85,
-   desc:'Serpentin interminable. Ennemis dopés, crédits réduits. Résisterez-vous ?',
-   wc:[[-1,1],[21,1],[21,4],[2,4],[2,7],[21,7],[21,10],[2,10],[2,12],[12,12]]},
-  {name:'CANYON',diff:2,speedMul:1.05,goldMul:.95,
+  {name:'PÉRIMÈTRE',diff:2,speedMul:1.05,goldMul:1,
+   desc:'Le circuit classique du secteur. Virages larges, pression croissante.',
+   wc:[[-1,7],[3,7],[3,3],[9,3],[9,10],[15,10],[15,4],[20,4],[20,12],[23,12]]},
+  {name:'CANYON',diff:3,speedMul:1.12,goldMul:.9,
    desc:'Zigzags serrés à découvert. Chaque angle de tir compte.',
-   wc:[[-1,3],[6,3],[6,11],[11,11],[11,2],[17,2],[17,11],[23,11],[23,6]]}
+   wc:[[-1,3],[6,3],[6,11],[11,11],[11,2],[17,2],[17,11],[23,11],[23,6]]},
+  {name:'SERPENT',diff:4,speedMul:1.22,goldMul:.85,
+   desc:'Serpentin interminable. Ennemis dopés, crédits réduits. L\u2019épreuve finale.',
+   wc:[[-1,1],[21,1],[21,4],[2,4],[2,7],[21,7],[21,10],[2,10],[2,12],[12,12]]}
 ];
+
+/* ================= PROGRESSION (localStorage) ================= */
+const STORE='bastion_progress_v1';
+let PROG={unlocked:1,done:[]};
+function loadProg(){
+  try{
+    const d=JSON.parse(localStorage.getItem(STORE));
+    if(d&&typeof d.unlocked==='number'){
+      PROG.unlocked=Math.max(1,Math.min(MAPS.length,d.unlocked));
+      PROG.done=Array.isArray(d.done)?d.done.filter(i=>i>=0&&i<MAPS.length):[];
+    }
+  }catch(e){}
+}
+function saveProg(){try{localStorage.setItem(STORE,JSON.stringify(PROG));}catch(e){}}
+function unlockNext(){
+  if(!PROG.done.includes(S.map))PROG.done.push(S.map);
+  let newly=null;
+  if(S.map+1<MAPS.length&&PROG.unlocked<S.map+2){PROG.unlocked=S.map+2;newly=MAPS[S.map+1];}
+  saveProg();
+  return newly;
+}
 
 /* ================= CONSTANTES ================= */
 const W=960,H=560,CELL=40,COLS=24,ROWS=14,MAXW=20;
@@ -300,7 +344,7 @@ function loadMap(i){
   computePath(MAPS[i].wc);
   genDecor();
   renderGround();
-  $('brandSub').textContent='DÉFENSE DE SECTEUR // CIRCUIT '+MAPS[i].name;
+  $('brandSub').textContent='DÉFENSE DE SECTEUR // NIVEAU '+(i+1)+' — '+MAPS[i].name;
 }
 
 const TOWERS={
@@ -446,6 +490,7 @@ const SFX={
   err:()=>tone(150,.14,'sawtooth',.16,100),
   leak:()=>tone(140,.3,'sawtooth',.3,65),
   wave:()=>{tone(220,.15,'square',.18);setTimeout(()=>tone(330,.22,'square',.18),140);},
+  unlock:()=>[523,659,784,1047].forEach((f,i)=>setTimeout(()=>tone(f,.2,'square',.18),i*110)),
   win:()=>[440,554,659,880].forEach((f,i)=>setTimeout(()=>tone(f,.25,'square',.2),i*160)),
   lose:()=>[330,262,196,131].forEach((f,i)=>setTimeout(()=>tone(f,.32,'sawtooth',.18),i*200))
 };
@@ -772,6 +817,7 @@ function toggleBuild(k){
 
 /* ================= SÉLECTEUR DE CIRCUITS ================= */
 let selMap=0;
+const MAP_CARDS=[];
 function drawPreview(c2,M){
   const g=c2.getContext('2d'),w=c2.width,h=c2.height,sc=w/W;
   const bg=g.createLinearGradient(0,0,0,h);
@@ -790,21 +836,43 @@ function drawPreview(c2,M){
   g.strokeStyle='rgba(53,224,196,.6)';g.lineWidth=1.5;
   g.strokeRect(b.x-8,b.y-8,16,16);
 }
+function updateSel(){
+  MAP_CARDS.forEach((d,i)=>d.classList.toggle('sel',i===selMap));
+}
+function refreshMapCards(){
+  $('progLine').textContent='PROGRESSION : '+PROG.done.length+'/'+MAPS.length+' CIRCUITS SÉCURISÉS';
+  $('legendLine').hidden=PROG.done.length<MAPS.length;
+  MAP_CARDS.forEach((d,i)=>{
+    const locked=i>=PROG.unlocked,done=PROG.done.includes(i);
+    d.classList.toggle('locked',locked);
+    d.querySelector('.mlock').hidden=!locked;
+    d.querySelector('.mdone').hidden=!done;
+    if(locked&&selMap===i)selMap=0;
+  });
+  if(selMap>=PROG.unlocked)selMap=0;
+  updateSel();
+}
 (function buildMapCards(){
   const grid=$('mapsGrid');
   MAPS.forEach((M,i)=>{
     const d=document.createElement('div');
-    d.className='mcard'+(i===0?' sel':'');
-    d.innerHTML='<canvas width="272" height="159"></canvas>'+
-      '<div class="mrow"><span class="mname">'+M.name+'</span>'+
-      '<span class="mstars">'+'★'.repeat(M.diff)+'☆'.repeat(3-M.diff)+'</span></div>'+
+    d.className='mcard';
+    d.innerHTML=
+      '<div class="mthumb"><canvas width="272" height="159"></canvas>'+
+      '<div class="mlock" hidden><span>🔒</span>TERMINEZ LE NIVEAU '+i+'</div>'+
+      '<div class="mdone" hidden>✓ SÉCURISÉ</div></div>'+
+      '<div class="mrow"><span class="mname">NIV.'+(i+1)+' — '+M.name+'</span>'+
+      '<span class="mstars">'+'★'.repeat(M.diff)+'☆'.repeat(4-M.diff)+'</span></div>'+
       '<div class="mdesc">'+M.desc+'</div>';
     d.addEventListener('click',()=>{
-      selMap=i;
-      grid.querySelectorAll('.mcard').forEach(el=>el.classList.remove('sel'));
-      d.classList.add('sel');
+      if(i>=PROG.unlocked){
+        d.classList.remove('deny');void d.offsetWidth;d.classList.add('deny');
+        SFX.err();return;
+      }
+      selMap=i;updateSel();
     });
     grid.appendChild(d);
+    MAP_CARDS.push(d);
     drawPreview(d.querySelector('canvas'),M);
   });
 })();
@@ -1066,15 +1134,26 @@ function endGame(win){
   S.phase=win?'won':'over';
   $('endTitle').textContent=win?'SECTEUR SÉCURISÉ':'BASE DÉTRUITE';
   $('endTitle').style.color=win?'var(--teal)':'var(--red)';
-  $('endSub').textContent=(win?'Circuit '+MAPS[S.map].name+' tenu jusqu\u2019au bout. Beau travail, commandant.'
-    :'La ligne est tombée à la vague '+S.wave+' sur le circuit '+MAPS[S.map].name+'.');
+  $('endSub').textContent=win?'Niveau '+(S.map+1)+' — '+MAPS[S.map].name+' tenu jusqu\u2019au bout. Beau travail, commandant.'
+    :'La ligne est tombée à la vague '+S.wave+' sur '+MAPS[S.map].name+'.';
+  const eu=$('endUnlock');
+  if(win){
+    const newly=unlockNext();
+    refreshMapCards();
+    eu.hidden=false;
+    if(newly){eu.textContent='🔓 NOUVEAU CIRCUIT DÉBLOQUÉ : NIV.'+(S.map+2)+' — '+newly.name;
+      eu.style.color='var(--gold)';SFX.unlock();}
+    else if(PROG.done.length===MAPS.length){eu.textContent='🏆 TOUS LES CIRCUITS SÉCURISÉS — LÉGENDE DU BASTION';
+      eu.style.color='var(--teal)';}
+    else{eu.textContent='✓ CIRCUIT DÉJÀ SÉCURISÉ';eu.style.color='var(--dim)';}
+  }else{eu.hidden=true;}
   $('endStats').innerHTML=
     '<div><label>VAGUES</label><b>'+S.wave+'/'+MAXW+'</b></div>'+
     '<div><label>ÉLIMINATIONS</label><b>'+S.kills+'</b></div>'+
     '<div><label>TOURELLES</label><b>'+S.built+'</b></div>'+
     '<div><label>SCORE</label><b>'+S.score+'</b></div>';
   ovEnd.classList.remove('hidden');
-  (win?SFX.win:SFX.lose)();
+  if(win)SFX.win();else SFX.lose();
 }
 function syncHud(){
   uiLives.textContent=S.lives;uiGold.textContent=S.gold;
@@ -1250,7 +1329,7 @@ function restart(){
   ac();
   loadMap(S.map);
   reset();
-  banner('↻ NOUVELLE MISSION — CIRCUIT '+MAPS[S.map].name);
+  banner('↻ NOUVELLE MISSION — NIVEAU '+(S.map+1)+' : '+MAPS[S.map].name);
   SFX.wave();
 }
 $('btnPause').addEventListener('click',togglePause);
@@ -1258,16 +1337,22 @@ $('btnSpeed').addEventListener('click',function(){S.speed=S.speed===1?2:1;this.t
 $('btnSound').addEventListener('click',function(){muted=!muted;this.textContent=muted?'🔇':'🔊';});
 $('btnDeploy').addEventListener('click',()=>{
   ac();
+  if(selMap>=PROG.unlocked)selMap=0;
   loadMap(selMap);
   reset();
-  banner('CIRCUIT '+MAPS[selMap].name+' — CONSTRUISEZ VOS DÉFENSES');
+  banner('NIVEAU '+(selMap+1)+' — '+MAPS[selMap].name.toUpperCase()+' : CONSTRUISEZ VOS DÉFENSES');
   SFX.wave();
 });
 $('btnReplay').addEventListener('click',restart);
 $('btnRestart').addEventListener('click',restart);
 $('btnMaps').addEventListener('click',()=>{
   ovEnd.classList.add('hidden');
+  refreshMapCards();
   ovBrief.classList.remove('hidden');
+});
+$('btnResetProg').addEventListener('click',()=>{
+  if(!confirm('Réinitialiser toute la progression ? Les circuits seront reverrouillés.'))return;
+  PROG={unlocked:1,done:[]};saveProg();selMap=0;refreshMapCards();SFX.err();
 });
 document.addEventListener('keydown',e=>{
   if(e.code==='Space'){e.preventDefault();togglePause();return;}
@@ -1279,7 +1364,9 @@ document.addEventListener('keydown',e=>{
 });
 
 /* ================= GO ================= */
-loadMap(0);
+loadProg();
+refreshMapCards();
+loadMap(selMap);
 reset();
 ovBrief.classList.remove('hidden');
 let last=performance.now();
