@@ -103,20 +103,21 @@ canvas#game{display:block;width:100%;height:auto}
   box-shadow:inset 0 0 90px rgba(255,50,50,.5)}
 #danger.on{opacity:1;animation:dpulse 1s infinite}
 @keyframes dpulse{50%{box-shadow:inset 0 0 130px rgba(255,50,50,.75)}}
-.ov{position:absolute;inset:0;z-index:6;display:flex;align-items:center;justify-content:center;background:rgba(5,10,7,.88);overflow:auto}
-#pauseOv .big{font-family:"Black Ops One";font-weight:400;font-size:52px;letter-spacing:6px;color:var(--teal);
+.ov{position:absolute;inset:0;z-index:6;display:flex;padding:12px;
+  background:rgba(5,10,7,.88);overflow:auto}
+#pauseOv .big{margin:auto;font-family:"Black Ops One";font-weight:400;font-size:52px;letter-spacing:6px;color:var(--teal);
   text-shadow:0 0 30px rgba(53,224,196,.5)}
-.briefCard{max-width:700px;margin:16px;padding:26px 28px;background:#0e1811;
+.briefCard{margin:auto;max-width:700px;padding:26px 28px;background:#0e1811;
   box-shadow:inset 0 0 0 1px var(--line2),0 30px 80px rgba(0,0,0,.6);
   clip-path:polygon(18px 0,100% 0,100% calc(100% - 18px),calc(100% - 18px) 100%,0 100%,0 18px)}
 .stamp{font-size:11px;letter-spacing:4px;color:var(--red);border:1px solid #6b2a2a;display:inline-block;padding:3px 10px;margin-bottom:12px}
 .briefCard h1{font-family:"Black Ops One";font-weight:400;font-size:40px;line-height:.95;color:var(--teal);
   text-shadow:0 0 26px rgba(53,224,196,.3)}
 .sub{color:var(--dim);font-size:15px;margin:8px 0 8px;letter-spacing:1px}
-.progline{font-size:11px;letter-spacing:3px;color:var(--amber);margin-bottom:12px}
+.progline{font-size:11px;letter-spacing:3px;color:var(--amber);margin-bottom:10px}
 .legend{font-family:"Black Ops One";font-weight:400;color:var(--teal);font-size:13px;letter-spacing:2px;
-  margin-bottom:12px;text-shadow:0 0 14px rgba(53,224,196,.5)}
-.mapsGrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+  margin-bottom:10px;text-shadow:0 0 14px rgba(53,224,196,.5)}
+.mapsGrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
 .mcard{background:#0b140e;box-shadow:inset 0 0 0 1px #22362a;padding:8px;cursor:pointer;position:relative;
   transition:transform .12s,box-shadow .12s}
 .mcard:hover{transform:translateY(-2px);box-shadow:inset 0 0 0 1px var(--line2)}
@@ -139,6 +140,8 @@ canvas#game{display:block;width:100%;height:auto}
 .mchip{display:inline-block;font-size:10px;font-weight:700;letter-spacing:1px;color:var(--teal);background:#0e211c;
   box-shadow:inset 0 0 0 1px #1d4a3f;padding:1px 6px;margin-right:4px}
 .mdesc{font-size:11.5px;color:var(--dim);line-height:1.3;margin-top:3px}
+.seline{font-size:11px;letter-spacing:2px;color:var(--teal);margin-bottom:12px;padding:6px 8px;
+  background:#0c1a15;box-shadow:inset 0 0 0 1px #1d4a3f}
 .rules{list-style:none;margin-bottom:12px}
 .rules li{padding:4px 0;font-size:14.5px;border-bottom:1px dashed #22362a}
 .keys{font-size:12px;letter-spacing:2px;color:var(--dim);margin-bottom:16px}
@@ -171,7 +174,7 @@ canvas#game{display:block;width:100%;height:auto}
 <body>
 <div id="stage">
   <header id="hud">
-    <div class="brand">PROTOCOLE <span>BASTION</span><em id="brandSub">DÉFENSE DE SECTEUR // v4.0</em></div>
+    <div class="brand">PROTOCOLE <span>BASTION</span><em id="brandSub">DÉFENSE DE SECTEUR // v4.1</em></div>
     <div class="hstats">
       <div class="hs lives"><label>VIES</label><b id="uiLives">20</b></div>
       <div class="hs gold"><label>CRÉDITS</label><b id="uiGold">220</b></div>
@@ -200,6 +203,7 @@ canvas#game{display:block;width:100%;height:auto}
           <div id="progLine" class="progline"></div>
           <div id="legendLine" class="legend" hidden>★ LÉGENDE DU BASTION — TOUS LES CIRCUITS SÉCURISÉS ★</div>
           <div id="mapsGrid" class="mapsGrid"></div>
+          <div id="selLine" class="selline"></div>
           <ul class="rules">
             <li>▸ Sélectionnez une tourelle à droite, puis cliquez sur l'herbe pour la construire.</li>
             <li>▸ Certains circuits ont plusieurs portails : les ennemis attaquent sur tous les fronts.</li>
@@ -297,14 +301,16 @@ const MAPS=[
 ];
 
 /* ================= PROGRESSION (localStorage) ================= */
-const STORE='bastion_progress_v1';
+const STORE='bastion_progress_v2';
 let PROG={unlocked:1,done:[]};
 function loadProg(){
+  PROG={unlocked:1,done:[]};
   try{
     const d=JSON.parse(localStorage.getItem(STORE));
     if(d&&typeof d.unlocked==='number'){
-      PROG.unlocked=Math.max(1,Math.min(MAPS.length,d.unlocked));
-      PROG.done=Array.isArray(d.done)?d.done.filter(i=>i>=0&&i<MAPS.length):[];
+      PROG.unlocked=Math.max(1,Math.min(MAPS.length,Math.floor(d.unlocked)));
+      PROG.done=[...new Set((Array.isArray(d.done)?d.done:[]).filter(i=>Number.isInteger(i)&&i>=0&&i<MAPS.length))];
+      PROG.unlocked=Math.max(PROG.unlocked,1);
     }
   }catch(e){}
 }
@@ -313,8 +319,15 @@ function unlockNext(){
   if(!PROG.done.includes(S.map))PROG.done.push(S.map);
   let newly=null;
   if(S.map+1<MAPS.length&&PROG.unlocked<S.map+2){PROG.unlocked=S.map+2;newly=MAPS[S.map+1];}
+  PROG.unlocked=Math.min(PROG.unlocked,MAPS.length);
   saveProg();
   return newly;
+}
+function autoSelect(){
+  for(let i=0;i<PROG.unlocked;i++){
+    if(!PROG.done.includes(i)){selMap=i;return;}
+  }
+  selMap=0;
 }
 
 /* ================= CONSTANTES ================= */
@@ -366,6 +379,7 @@ function genDecor(){
 }
 const S={};
 function loadMap(i){
+  i=Math.max(0,Math.min(MAPS.length-1,i|0));
   S.map=i;
   computePath(MAPS[i]);
   genDecor();
@@ -854,10 +868,12 @@ function drawPreview(c2,M){
   for(const lane of M.lanes){
     const pts=lane.map(p=>({x:(p[0]*CELL+CELL/2)*sc,y:(p[1]*CELL+CELL/2)*sc}));
     basePt=pts[pts.length-1];
-    function tr(){g.beginPath();g.moveTo(pts[0].x,pts[0].y);
-      for(let i=1;i<pts.length;i++)g.lineTo(pts[i].x,pts[i].y);}
-    tr();g.strokeStyle='#241b0e';g.lineWidth=46*sc;g.stroke();
-    tr();g.strokeStyle='#6f5c3a';g.lineWidth=30*sc;g.stroke();
+    g.beginPath();g.moveTo(pts[0].x,pts[0].y);
+    for(let i=1;i<pts.length;i++)g.lineTo(pts[i].x,pts[i].y);
+    g.strokeStyle='#241b0e';g.lineWidth=46*sc;g.stroke();
+    g.beginPath();g.moveTo(pts[0].x,pts[0].y);
+    for(let i=1;i<pts.length;i++)g.lineTo(pts[i].x,pts[i].y);
+    g.strokeStyle='#6f5c3a';g.lineWidth=30*sc;g.stroke();
     g.fillStyle='#ff6f61';
     g.beginPath();g.arc(Math.max(5,pts[0].x),pts[0].y,4,0,7);g.fill();
   }
@@ -869,6 +885,9 @@ function drawPreview(c2,M){
 }
 function updateSel(){
   MAP_CARDS.forEach((d,i)=>d.classList.toggle('sel',i===selMap));
+  const M=MAPS[selMap];
+  $('selLine').textContent='CIRCUIT SÉLECTIONNÉ : NIV.'+(selMap+1)+' — '+M.name+
+    '  ('+M.lanes.length+' PORTAIL'+(M.lanes.length>1?'S':'')+')';
 }
 function refreshMapCards(){
   $('progLine').textContent='PROGRESSION : '+PROG.done.length+'/'+MAPS.length+' CIRCUITS SÉCURISÉS';
@@ -878,7 +897,6 @@ function refreshMapCards(){
     d.classList.toggle('locked',locked);
     d.querySelector('.mlock').hidden=!locked;
     d.querySelector('.mdone').hidden=!done;
-    if(locked&&selMap===i)selMap=0;
   });
   if(selMap>=PROG.unlocked)selMap=0;
   updateSel();
@@ -1177,6 +1195,7 @@ function endGame(win){
   const eu=$('endUnlock');
   if(win){
     const newly=unlockNext();
+    if(newly)selMap=S.map+1;
     refreshMapCards();
     eu.hidden=false;
     if(newly){eu.textContent='🔓 NOUVEAU CIRCUIT DÉBLOQUÉ : NIV.'+(S.map+2)+' — '+newly.name;
@@ -1377,7 +1396,7 @@ $('btnSpeed').addEventListener('click',function(){S.speed=S.speed===1?2:1;this.t
 $('btnSound').addEventListener('click',function(){muted=!muted;this.textContent=muted?'🔇':'🔊';});
 $('btnDeploy').addEventListener('click',()=>{
   ac();
-  if(selMap>=PROG.unlocked)selMap=0;
+  if(selMap<0||selMap>=PROG.unlocked)selMap=0;
   loadMap(selMap);
   reset();
   banner('NIVEAU '+(selMap+1)+' — '+MAPS[selMap].name.toUpperCase()+' : CONSTRUISEZ VOS DÉFENSES');
@@ -1387,6 +1406,7 @@ $('btnReplay').addEventListener('click',restart);
 $('btnRestart').addEventListener('click',restart);
 $('btnMaps').addEventListener('click',()=>{
   ovEnd.classList.add('hidden');
+  autoSelect();
   refreshMapCards();
   ovBrief.classList.remove('hidden');
 });
@@ -1405,6 +1425,7 @@ document.addEventListener('keydown',e=>{
 
 /* ================= GO ================= */
 loadProg();
+autoSelect();
 refreshMapCards();
 loadMap(selMap);
 reset();
