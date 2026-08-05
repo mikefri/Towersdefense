@@ -28,6 +28,7 @@ body::after{content:"";position:fixed;left:0;right:0;height:120px;top:-140px;poi
   background:linear-gradient(180deg,transparent,rgba(120,255,190,.05),transparent);animation:scan 9s linear infinite}
 @keyframes scan{to{top:110%}}
 [hidden]{display:none!important}
+.hidden{display:none!important}
 #stage{max-width:1280px;margin:18px auto;padding:0 14px}
 #hud{display:flex;align-items:center;gap:18px;flex-wrap:wrap;background:var(--panel);
   box-shadow:inset 0 0 0 1px var(--line);padding:10px 16px;margin-bottom:12px;
@@ -135,7 +136,7 @@ canvas#game{display:block;width:100%;height:auto}
 <body>
 <div id="stage">
   <header id="hud">
-    <div class="brand">PROTOCOLE <span>BASTION</span><em>DÉFENSE DE SECTEUR // v2.0</em></div>
+    <div class="brand">PROTOCOLE <span>BASTION</span><em>DÉFENSE DE SECTEUR // v2.1</em></div>
     <div class="hstats">
       <div class="hs lives"><label>VIES</label><b id="uiLives">20</b></div>
       <div class="hs gold"><label>CRÉDITS</label><b id="uiGold">220</b></div>
@@ -143,9 +144,10 @@ canvas#game{display:block;width:100%;height:auto}
       <div class="hs"><label>SCORE</label><b id="uiScore">0</b></div>
     </div>
     <div>
-      <button class="ibtn" id="btnPause" title="Pause (Espace)">⏸</button>
-      <button class="ibtn" id="btnSpeed" title="Vitesse du jeu">×1</button>
-      <button class="ibtn" id="btnSound" title="Son">🔊</button>
+      <button type="button" class="ibtn" id="btnRestart" title="Recommencer la partie">↻</button>
+      <button type="button" class="ibtn" id="btnPause" title="Pause (Espace)">⏸</button>
+      <button type="button" class="ibtn" id="btnSpeed" title="Vitesse du jeu">×1</button>
+      <button type="button" class="ibtn" id="btnSound" title="Son">🔊</button>
     </div>
   </header>
 
@@ -167,7 +169,7 @@ canvas#game{display:block;width:100%;height:auto}
             <li>▸ Lancez la vague en avance pour empocher un bonus de crédits.</li>
           </ul>
           <div class="keys">[1–5] ARMEMENT &nbsp;•&nbsp; [ESPACE] PAUSE &nbsp;•&nbsp; [ÉCHAP] ANNULER &nbsp;•&nbsp; [ENTRÉE] VAGUE</div>
-          <button id="btnDeploy" class="btnBig">DÉPLOYER ▸</button>
+          <button type="button" id="btnDeploy" class="btnBig">DÉPLOYER ▸</button>
         </div>
       </div>
       <div id="ovEnd" class="ov hidden">
@@ -176,7 +178,7 @@ canvas#game{display:block;width:100%;height:auto}
           <h1 id="endTitle" style="font-size:36px">—</h1>
           <p class="sub" id="endSub"></p>
           <div id="endStats"></div>
-          <button id="btnReplay" class="btnBig" style="margin-top:18px">REJOUER ▸</button>
+          <button type="button" id="btnReplay" class="btnBig" style="margin-top:18px">REJOUER ▸</button>
         </div>
       </div>
     </div>
@@ -191,14 +193,14 @@ canvas#game{display:block;width:100%;height:auto}
         <div id="tbName"></div>
         <div id="tbStats"></div>
         <div class="row">
-          <button id="btnUp">AMÉLIORER</button>
-          <button id="btnSell">VENDRE</button>
+          <button type="button" id="btnUp">AMÉLIORER</button>
+          <button type="button" id="btnSell">VENDRE</button>
         </div>
       </div>
       <div class="panel">
         <div class="ptitle">PROCHAINE VAGUE</div>
         <div id="preview"></div>
-        <button id="btnWave">LANCER LA VAGUE 1 ▸</button>
+        <button type="button" id="btnWave">LANCER LA VAGUE 1 ▸</button>
       </div>
       <div id="tip"><b>Astuce :</b> le GIVRE ralentit tout ce qu'il touche. Combinez-le avec un CANON dans un virage…
         et regardez le carnage. Les rochers et les arbres ne sont pas constructibles.</div>
@@ -231,7 +233,6 @@ for(let i=0;i<WC.length-1;i++){
   while(c!==c2||r!==r2){if(c>=0&&c<COLS&&r>=0&&r<ROWS)PATH.add(c+','+r);c+=dc;r+=dr;}
   if(c2>=0&&c2<COLS&&r2>=0&&r2<ROWS)PATH.add(c2+','+r2);
 }
-/* longueur du chemin + points le long du tracé */
 let PATHLEN=0;const SEGS=[];
 for(let i=0;i<WAY.length-1;i++){
   const a=WAY[i],b=WAY[i+1],l=Math.hypot(b.x-a.x,b.y-a.y);
@@ -259,8 +260,6 @@ const ENEMIES={
   boss  :{name:'CUIRASSÉ-OMÉGA',hp:750,spd:34, r:20,gold:120,dmg:5,c:'#ff3b5c'}
 };
 const GAP={normal:.8,fast:.45,tank:1.15,boss:2.2};
-
-/* décor : arbres / rochers / cristaux (cases non constructibles) */
 const DECOR=[
   [1,1,'tree'],[5,1,'tree'],[7,0,'tree'],[2,2,'rock'],
   [0,10,'tree'],[2,11,'rock'],[5,12,'tree'],[7,11,'tree'],
@@ -294,8 +293,6 @@ function glow(x,y,r,spr,a){
   ctx.globalAlpha=a===undefined?1:a;
   ctx.drawImage(spr,x-r,y-r,r*2,r*2);ctx.restore();
 }
-
-/* ambiance : brume + lucioles */
 const FOG=[];for(let i=0;i<3;i++)FOG.push({x:Math.random()*W,y:80+Math.random()*(H-160),
   r:150+Math.random()*130,vx:(Math.random()<.5?-1:1)*(4+Math.random()*6)});
 const FLIES=[];for(let i=0;i<14;i++)FLIES.push({x:Math.random()*W,y:Math.random()*H,
@@ -355,7 +352,6 @@ const ground=document.createElement('canvas');ground.width=W*DPR;ground.height=H
     g.fillRect(p.x+ox,p.y+oy,1.5+Math.random()*1.5,1.5+Math.random()*1.5);
   }
 })();
-/* vignette */
 const vig=document.createElement('canvas');vig.width=W*DPR;vig.height=H*DPR;
 (function(){
   const v=vig.getContext('2d');v.scale(DPR,DPR);
@@ -404,15 +400,25 @@ const SFX={
 
 /* ================= ÉTAT ================= */
 const S={};let occupied={};
+function hideOverlays(){
+  ovBrief.classList.add('hidden');
+  ovEnd.classList.add('hidden');
+  pauseOv.classList.add('hidden');
+}
 function reset(){
   Object.assign(S,{gold:220,lives:20,score:0,wave:0,phase:'build',countdown:0,speed:1,paused:false,
     enemies:[],towers:[],shots:[],parts:[],texts:[],beams:[],queue:[],spawnT:0,
     buildType:null,selected:null,hover:null,kills:0,built:0,shake:0,flash:0,time:0});
   occupied={};
   S.pending=makeWave(1);
-  towerBox.hidden=true;wrap.classList.remove('building');
-  $('btnPause').textContent='⏸';pauseOv.classList.add('hidden');
-  renderPreview();syncHud();
+  hideOverlays();
+  towerBox.hidden=true;
+  wrap.classList.remove('building');
+  $('btnPause').textContent='⏸';
+  $('btnSpeed').textContent='×1';
+  dangerEl.classList.remove('on');
+  renderPreview();
+  syncHud();
 }
 
 /* ================= DESSIN : TOURELLES ================= */
@@ -1147,11 +1153,18 @@ function togglePause(){
   pauseOv.classList.toggle('hidden',!S.paused);
   $('btnPause').textContent=S.paused?'▶':'⏸';
 }
+function restart(){
+  ac();
+  reset();
+  banner('↻ NOUVELLE MISSION — PRÉPAREZ VOS DÉFENSES');
+  SFX.wave();
+}
 $('btnPause').addEventListener('click',togglePause);
 $('btnSpeed').addEventListener('click',function(){S.speed=S.speed===1?2:1;this.textContent='×'+S.speed;});
 $('btnSound').addEventListener('click',function(){muted=!muted;this.textContent=muted?'🔇':'🔊';});
 $('btnDeploy').addEventListener('click',()=>{ac();ovBrief.classList.add('hidden');SFX.wave();});
-$('btnReplay').addEventListener('click',()=>{ovEnd.classList.add('hidden');reset();});
+$('btnReplay').addEventListener('click',restart);
+$('btnRestart').addEventListener('click',restart);
 document.addEventListener('keydown',e=>{
   if(e.code==='Space'){e.preventDefault();togglePause();return;}
   if(e.key==='Escape'){S.buildType=null;S.selected=null;towerBox.hidden=true;
@@ -1163,6 +1176,7 @@ document.addEventListener('keydown',e=>{
 
 /* ================= GO ================= */
 reset();
+ovBrief.classList.remove('hidden');
 let last=performance.now();
 function loop(now){
   requestAnimationFrame(loop);
