@@ -106,7 +106,7 @@ canvas#game{display:block;width:100%;height:auto}
 .ov{position:absolute;inset:0;z-index:6;display:flex;align-items:center;justify-content:center;background:rgba(5,10,7,.88);overflow:auto}
 #pauseOv .big{font-family:"Black Ops One";font-weight:400;font-size:52px;letter-spacing:6px;color:var(--teal);
   text-shadow:0 0 30px rgba(53,224,196,.5)}
-.briefCard{max-width:680px;margin:16px;padding:26px 28px;background:#0e1811;
+.briefCard{max-width:700px;margin:16px;padding:26px 28px;background:#0e1811;
   box-shadow:inset 0 0 0 1px var(--line2),0 30px 80px rgba(0,0,0,.6);
   clip-path:polygon(18px 0,100% 0,100% calc(100% - 18px),calc(100% - 18px) 100%,0 100%,0 18px)}
 .stamp{font-size:11px;letter-spacing:4px;color:var(--red);border:1px solid #6b2a2a;display:inline-block;padding:3px 10px;margin-bottom:12px}
@@ -133,9 +133,12 @@ canvas#game{display:block;width:100%;height:auto}
 .mdone{position:absolute;top:6px;right:6px;background:rgba(16,34,22,.92);color:var(--green);font-size:10px;
   font-weight:700;letter-spacing:1px;padding:2px 7px;box-shadow:inset 0 0 0 1px #2f5a38,0 0 10px rgba(141,255,92,.25)}
 .mrow{display:flex;justify-content:space-between;align-items:baseline;margin-top:6px}
-.mname{font-family:"Black Ops One";font-weight:400;font-size:13px;letter-spacing:1px}
-.mstars{color:var(--gold);font-size:12px;letter-spacing:2px;text-shadow:0 0 8px rgba(255,210,63,.5)}
-.mdesc{font-size:11.5px;color:var(--dim);line-height:1.3;margin-top:2px}
+.mname{font-family:"Black Ops One";font-weight:400;font-size:12.5px;letter-spacing:1px}
+.mstars{color:var(--gold);font-size:11px;letter-spacing:1px;text-shadow:0 0 8px rgba(255,210,63,.5)}
+.mchips{margin-top:3px}
+.mchip{display:inline-block;font-size:10px;font-weight:700;letter-spacing:1px;color:var(--teal);background:#0e211c;
+  box-shadow:inset 0 0 0 1px #1d4a3f;padding:1px 6px;margin-right:4px}
+.mdesc{font-size:11.5px;color:var(--dim);line-height:1.3;margin-top:3px}
 .rules{list-style:none;margin-bottom:12px}
 .rules li{padding:4px 0;font-size:14.5px;border-bottom:1px dashed #22362a}
 .keys{font-size:12px;letter-spacing:2px;color:var(--dim);margin-bottom:16px}
@@ -168,7 +171,7 @@ canvas#game{display:block;width:100%;height:auto}
 <body>
 <div id="stage">
   <header id="hud">
-    <div class="brand">PROTOCOLE <span>BASTION</span><em id="brandSub">DÉFENSE DE SECTEUR // v3.1</em></div>
+    <div class="brand">PROTOCOLE <span>BASTION</span><em id="brandSub">DÉFENSE DE SECTEUR // v4.0</em></div>
     <div class="hstats">
       <div class="hs lives"><label>VIES</label><b id="uiLives">20</b></div>
       <div class="hs gold"><label>CRÉDITS</label><b id="uiGold">220</b></div>
@@ -193,13 +196,13 @@ canvas#game{display:block;width:100%;height:auto}
         <div class="briefCard">
           <div class="stamp">PRIORITÉ ABSOLUE // SECTEUR 7</div>
           <h1>PROTOCOLE<br><span style="color:var(--amber)">BASTION</span></h1>
-          <p class="sub">Choisissez votre circuit — chaque victoire déverrouille le suivant.</p>
+          <p class="sub">7 circuits, des portails multiples — chaque victoire déverrouille le suivant.</p>
           <div id="progLine" class="progline"></div>
           <div id="legendLine" class="legend" hidden>★ LÉGENDE DU BASTION — TOUS LES CIRCUITS SÉCURISÉS ★</div>
           <div id="mapsGrid" class="mapsGrid"></div>
           <ul class="rules">
             <li>▸ Sélectionnez une tourelle à droite, puis cliquez sur l'herbe pour la construire.</li>
-            <li>▸ Cliquez sur une tourelle posée pour l'améliorer ou la revendre.</li>
+            <li>▸ Certains circuits ont plusieurs portails : les ennemis attaquent sur tous les fronts.</li>
             <li>▸ Chaque intrus qui atteint la base coûte des vies. Vague lancée en avance = bonus.</li>
           </ul>
           <div class="keys">[1–5] ARMEMENT &nbsp;•&nbsp; [ESPACE] PAUSE &nbsp;•&nbsp; [ÉCHAP] ANNULER &nbsp;•&nbsp; [ENTRÉE] VAGUE</div>
@@ -241,8 +244,8 @@ canvas#game{display:block;width:100%;height:auto}
         <div id="preview"></div>
         <button type="button" id="btnWave">LANCER LA VAGUE 1 ▸</button>
       </div>
-      <div id="tip"><b>Astuce :</b> le GIVRE ralentit tout ce qu'il touche. Combinez-le avec un CANON dans un virage…
-        Terminez un circuit pour déverrouiller le suivant !</div>
+      <div id="tip"><b>Astuce :</b> sur les circuits à plusieurs portails, le GIVRE dans les couloirs d'approche
+        fait gagner un temps précieux. Surveillez tous les fronts !</div>
     </aside>
   </div>
 </div>
@@ -258,20 +261,39 @@ const btnWave=$('btnWave'),towerBox=$('towerBox'),tbName=$('tbName'),tbStats=$('
 const btnUp=$('btnUp'),btnSell=$('btnSell');
 const ovBrief=$('ovBrief'),ovEnd=$('ovEnd'),pauseOv=$('pauseOv'),dangerEl=$('danger');
 
-/* ================= CARTES (campagne) ================= */
+/* ================= CIRCUITS (campagne) ================= */
 const MAPS=[
   {name:'SPIRALE',diff:1,speedMul:1,goldMul:1,
    desc:'Longue spirale vers la base centrale. Parfait pour apprendre à bâtir.',
-   wc:[[-1,1],[21,1],[21,12],[3,12],[3,4],[18,4],[18,9],[7,9],[7,6],[12,6]]},
+   lanes:[[[-1,1],[21,1],[21,12],[3,12],[3,4],[18,4],[18,9],[7,9],[7,6],[12,6]]]},
   {name:'PÉRIMÈTRE',diff:2,speedMul:1.05,goldMul:1,
    desc:'Le circuit classique du secteur. Virages larges, pression croissante.',
-   wc:[[-1,7],[3,7],[3,3],[9,3],[9,10],[15,10],[15,4],[20,4],[20,12],[23,12]]},
+   lanes:[[[-1,7],[3,7],[3,3],[9,3],[9,10],[15,10],[15,4],[20,4],[20,12],[23,12]]]},
+  {name:'LA TENAILLE',diff:2,speedMul:1.05,goldMul:1.05,
+   desc:'Deux pinces, une seule base. Divisez vos forces… ou verrouillez la fusion.',
+   lanes:[
+     [[-1,2],[6,2],[6,5],[13,5],[13,7],[23,7]],
+     [[-1,11],[6,11],[6,8],[13,8],[13,7],[23,7]]
+   ]},
   {name:'CANYON',diff:3,speedMul:1.12,goldMul:.9,
    desc:'Zigzags serrés à découvert. Chaque angle de tir compte.',
-   wc:[[-1,3],[6,3],[6,11],[11,11],[11,2],[17,2],[17,11],[23,11],[23,6]]},
-  {name:'SERPENT',diff:4,speedMul:1.22,goldMul:.85,
+   lanes:[[[-1,3],[6,3],[6,11],[11,11],[11,2],[17,2],[17,11],[23,11],[23,6]]]},
+  {name:'LES JUMEAUX',diff:3,speedMul:1.1,goldMul:1,
+   desc:'Deux couloirs jumeaux en escalier. Chaque flanc doit tenir.',
+   lanes:[
+     [[-1,3],[8,3],[8,1],[16,1],[16,5],[20,5],[20,7],[23,7]],
+     [[-1,11],[8,11],[8,13],[16,13],[16,9],[20,9],[20,7],[23,7]]
+   ]},
+  {name:'LE TRIDENT',diff:4,speedMul:1.15,goldMul:1.1,
+   desc:'Trois portails. Un assaut frontal au centre, deux tenailles sur les flancs.',
+   lanes:[
+     [[-1,1],[5,1],[5,5],[14,5],[14,7],[23,7]],
+     [[-1,7],[14,7],[23,7]],
+     [[-1,13],[5,13],[5,9],[14,9],[14,7],[23,7]]
+   ]},
+  {name:'SERPENT',diff:5,speedMul:1.25,goldMul:.8,
    desc:'Serpentin interminable. Ennemis dopés, crédits réduits. L\u2019épreuve finale.',
-   wc:[[-1,1],[21,1],[21,4],[2,4],[2,7],[21,7],[21,10],[2,10],[2,12],[12,12]]}
+   lanes:[[[-1,1],[21,1],[21,4],[2,4],[2,7],[21,7],[21,10],[2,10],[2,12],[12,12]]]}
 ];
 
 /* ================= PROGRESSION (localStorage) ================= */
@@ -300,31 +322,35 @@ const W=960,H=560,CELL=40,COLS=24,ROWS=14,MAXW=20;
 const DPR=Math.min(2,window.devicePixelRatio||1);
 cv.width=W*DPR;cv.height=H*DPR;ctx.setTransform(DPR,0,0,DPR,0,0);
 
-let WAY=[],SEGS=[],PATHLEN=0,BASE={x:0,y:0},SPAWN={x:0,y:0};
+let LANES=[],BASE={x:0,y:0},SPAWNS=[];
 const PATH=new Set();
 const DECOR=[],DECORSET=new Set();
 
-function computePath(wc){
-  WAY=wc.map(p=>({x:p[0]*CELL+CELL/2,y:p[1]*CELL+CELL/2}));
-  PATH.clear();
-  for(let i=0;i<wc.length-1;i++){
-    let c=wc[i][0],r=wc[i][1];
-    const c2=wc[i+1][0],r2=wc[i+1][1],dc=Math.sign(c2-c),dr=Math.sign(r2-r);
-    while(c!==c2||r!==r2){if(c>=0&&c<COLS&&r>=0&&r<ROWS)PATH.add(c+','+r);c+=dc;r+=dr;}
-    if(c2>=0&&c2<COLS&&r2>=0&&r2<ROWS)PATH.add(c2+','+r2);
+function computePath(m){
+  LANES=[];PATH.clear();
+  for(const wc of m.lanes){
+    const way=wc.map(p=>({x:p[0]*CELL+CELL/2,y:p[1]*CELL+CELL/2}));
+    for(let i=0;i<wc.length-1;i++){
+      let c=wc[i][0],r=wc[i][1];
+      const c2=wc[i+1][0],r2=wc[i+1][1],dc=Math.sign(c2-c),dr=Math.sign(r2-r);
+      while(c!==c2||r!==r2){if(c>=0&&c<COLS&&r>=0&&r<ROWS)PATH.add(c+','+r);c+=dc;r+=dr;}
+      if(c2>=0&&c2<COLS&&r2>=0&&r2<ROWS)PATH.add(c2+','+r2);
+    }
+    const segs=[];let len=0;
+    for(let i=0;i<way.length-1;i++){
+      const a=way[i],b=way[i+1],l=Math.hypot(b.x-a.x,b.y-a.y);
+      segs.push({a,b,l,start:len,ang:Math.atan2(b.y-a.y,b.x-a.x)});len+=l;
+    }
+    LANES.push({way,segs,len});
   }
-  SEGS=[];PATHLEN=0;
-  for(let i=0;i<WAY.length-1;i++){
-    const a=WAY[i],b=WAY[i+1],l=Math.hypot(b.x-a.x,b.y-a.y);
-    SEGS.push({a,b,l,start:PATHLEN,ang:Math.atan2(b.y-a.y,b.x-a.x)});PATHLEN+=l;
-  }
-  SPAWN=WAY[0];BASE=WAY[WAY.length-1];
+  SPAWNS=LANES.map(l=>l.way[0]);
+  BASE=LANES[0].way[LANES[0].way.length-1];
 }
-function pointAt(d){
-  d=Math.max(0,Math.min(PATHLEN-0.01,d));
-  for(const s of SEGS){if(d<=s.start+s.l){const k=(d-s.start)/s.l;
+function lanePoint(L,d){
+  d=Math.max(0,Math.min(L.len-0.01,d));
+  for(const s of L.segs){if(d<=s.start+s.l){const k=(d-s.start)/s.l;
     return{x:s.a.x+(s.b.x-s.a.x)*k,y:s.a.y+(s.b.y-s.a.y)*k,ang:s.ang};}}
-  const s=SEGS[SEGS.length-1];return{x:s.b.x,y:s.b.y,ang:s.ang};
+  const s=L.segs[L.segs.length-1];return{x:s.b.x,y:s.b.y,ang:s.ang};
 }
 function genDecor(){
   DECOR.length=0;DECORSET.clear();
@@ -341,7 +367,7 @@ function genDecor(){
 const S={};
 function loadMap(i){
   S.map=i;
-  computePath(MAPS[i].wc);
+  computePath(MAPS[i]);
   genDecor();
   renderGround();
   $('brandSub').textContent='DÉFENSE DE SECTEUR // NIVEAU '+(i+1)+' — '+MAPS[i].name;
@@ -432,17 +458,14 @@ function renderGround(){
     g.beginPath();g.arc(x,y,.6,0,7);g.fill();
   }
   g.globalAlpha=1;
-  function trace(){g.beginPath();g.moveTo(WAY[0].x,WAY[0].y);
-    for(let i=1;i<WAY.length;i++)g.lineTo(WAY[i].x,WAY[i].y);}
   g.lineJoin='round';g.lineCap='round';
-  trace();g.strokeStyle='rgba(0,0,0,.4)';g.lineWidth=54;g.stroke();
-  trace();g.strokeStyle='#241b0e';g.lineWidth=46;g.stroke();
-  trace();g.strokeStyle='#584829';g.lineWidth=38;g.stroke();
-  trace();g.strokeStyle='#6f5c3a';g.lineWidth=31;g.stroke();
-  trace();g.strokeStyle='#7c6844';g.lineWidth=22;g.stroke();
-  trace();g.strokeStyle='rgba(38,28,14,.55)';g.lineWidth=5;g.stroke();
+  function trace(way){g.beginPath();g.moveTo(way[0].x,way[0].y);
+    for(let i=1;i<way.length;i++)g.lineTo(way[i].x,way[i].y);}
+  const layers=[['rgba(0,0,0,.4)',54],['#241b0e',46],['#584829',38],['#6f5c3a',31],['#7c6844',22],['rgba(38,28,14,.55)',5]];
+  for(const L of LANES)for(const[col,w]of layers){trace(L.way);g.strokeStyle=col;g.lineWidth=w;g.stroke();}
   for(let i=0;i<240;i++){
-    const p=pointAt(Math.random()*PATHLEN);
+    const L=LANES[(Math.random()*LANES.length)|0];
+    const p=lanePoint(L,Math.random()*L.len);
     const ox=(Math.random()*26-13),oy=(Math.random()*26-13);
     g.fillStyle=Math.random()<.5?'rgba(120,105,70,.8)':'rgba(60,48,28,.8)';
     g.fillRect(p.x+ox,p.y+oy,1.5+Math.random()*1.5,1.5+Math.random()*1.5);
@@ -505,7 +528,7 @@ function hideOverlays(){
 function reset(){
   const M=MAPS[S.map];
   Object.assign(S,{gold:Math.round(220*M.goldMul),lives:20,score:0,wave:0,phase:'build',
-    countdown:0,speed:1,paused:false,
+    countdown:0,speed:1,paused:false,laneIdx:0,
     enemies:[],towers:[],shots:[],parts:[],texts:[],beams:[],queue:[],spawnT:0,
     buildType:null,selected:null,hover:null,kills:0,built:0,shake:0,flash:0,time:0});
   occupied={};
@@ -655,18 +678,21 @@ function drawDecor(){
     }
   }
 }
-function drawSpawn(){
-  const x=18,y=SPAWN.y,p=.5+.5*Math.sin(S.time*3);
+function drawSpawn(x,y,phase){
+  const p=.5+.5*Math.sin(S.time*3+phase);
   const gr=ctx.createRadialGradient(x,y,2,x,y,26);
   gr.addColorStop(0,'#000');gr.addColorStop(.7,'#0d0a08');gr.addColorStop(1,'rgba(13,10,8,0)');
   ctx.fillStyle=gr;ctx.beginPath();ctx.arc(x,y,26,0,7);ctx.fill();
   ctx.strokeStyle='#3a3126';ctx.lineWidth=5;
   ctx.beginPath();ctx.arc(x,y,20,Math.PI*.5,Math.PI*1.5);ctx.stroke();
   glow(x,y,20+p*7,GLOW.red,.3+p*.25);
-  ctx.save();ctx.translate(x,y);ctx.rotate(S.time*1.5);
+  ctx.save();ctx.translate(x,y);ctx.rotate(S.time*1.5+phase);
   ctx.strokeStyle='rgba(255,120,80,.55)';ctx.lineWidth=2;
   for(let i=0;i<3;i++){ctx.beginPath();ctx.arc(0,0,6+i*4,i*2.1,i*2.1+2.2);ctx.stroke();}
   ctx.restore();
+}
+function drawSpawns(){
+  SPAWNS.forEach((s,i)=>drawSpawn(18,s.y,i*2));
 }
 function drawBase(){
   const x=BASE.x,y=BASE.y,p=.5+.5*Math.sin(S.time*2.2);
@@ -823,18 +849,23 @@ function drawPreview(c2,M){
   const bg=g.createLinearGradient(0,0,0,h);
   bg.addColorStop(0,'#1c3122');bg.addColorStop(1,'#0f1c12');
   g.fillStyle=bg;g.fillRect(0,0,w,h);
-  const pts=M.wc.map(p=>({x:(p[0]*CELL+CELL/2)*sc,y:(p[1]*CELL+CELL/2)*sc}));
-  function tr(){g.beginPath();g.moveTo(pts[0].x,pts[0].y);
-    for(let i=1;i<pts.length;i++)g.lineTo(pts[i].x,pts[i].y);}
   g.lineJoin='round';g.lineCap='round';
-  tr();g.strokeStyle='#241b0e';g.lineWidth=46*sc;g.stroke();
-  tr();g.strokeStyle='#6f5c3a';g.lineWidth=30*sc;g.stroke();
-  g.fillStyle='#ff6f61';
-  g.beginPath();g.arc(Math.max(5,pts[0].x),pts[0].y,4,0,7);g.fill();
-  const b=pts[pts.length-1];
-  g.fillStyle='#35e0c4';g.fillRect(b.x-5,b.y-5,10,10);
-  g.strokeStyle='rgba(53,224,196,.6)';g.lineWidth=1.5;
-  g.strokeRect(b.x-8,b.y-8,16,16);
+  let basePt=null;
+  for(const lane of M.lanes){
+    const pts=lane.map(p=>({x:(p[0]*CELL+CELL/2)*sc,y:(p[1]*CELL+CELL/2)*sc}));
+    basePt=pts[pts.length-1];
+    function tr(){g.beginPath();g.moveTo(pts[0].x,pts[0].y);
+      for(let i=1;i<pts.length;i++)g.lineTo(pts[i].x,pts[i].y);}
+    tr();g.strokeStyle='#241b0e';g.lineWidth=46*sc;g.stroke();
+    tr();g.strokeStyle='#6f5c3a';g.lineWidth=30*sc;g.stroke();
+    g.fillStyle='#ff6f61';
+    g.beginPath();g.arc(Math.max(5,pts[0].x),pts[0].y,4,0,7);g.fill();
+  }
+  if(basePt){
+    g.fillStyle='#35e0c4';g.fillRect(basePt.x-5,basePt.y-5,10,10);
+    g.strokeStyle='rgba(53,224,196,.6)';g.lineWidth=1.5;
+    g.strokeRect(basePt.x-8,basePt.y-8,16,16);
+  }
 }
 function updateSel(){
   MAP_CARDS.forEach((d,i)=>d.classList.toggle('sel',i===selMap));
@@ -857,12 +888,17 @@ function refreshMapCards(){
   MAPS.forEach((M,i)=>{
     const d=document.createElement('div');
     d.className='mcard';
+    const n=M.lanes.length;
     d.innerHTML=
       '<div class="mthumb"><canvas width="272" height="159"></canvas>'+
       '<div class="mlock" hidden><span>🔒</span>TERMINEZ LE NIVEAU '+i+'</div>'+
       '<div class="mdone" hidden>✓ SÉCURISÉ</div></div>'+
       '<div class="mrow"><span class="mname">NIV.'+(i+1)+' — '+M.name+'</span>'+
-      '<span class="mstars">'+'★'.repeat(M.diff)+'☆'.repeat(4-M.diff)+'</span></div>'+
+      '<span class="mstars">'+'★'.repeat(M.diff)+'☆'.repeat(5-M.diff)+'</span></div>'+
+      '<div class="mchips"><span class="mchip">⛩ '+n+' PORTAIL'+(n>1?'S':'')+'</span>'+
+      (M.goldMul<1?'<span class="mchip" style="color:var(--red)">◆ CRÉDITS -'+Math.round((1-M.goldMul)*100)+'%</span>':'')+
+      (M.speedMul>1?'<span class="mchip" style="color:var(--amber)">⚡ ENNEMIS +'+Math.round((M.speedMul-1)*100)+'%</span>':'')+
+      '</div>'+
       '<div class="mdesc">'+M.desc+'</div>';
     d.addEventListener('click',()=>{
       if(i>=PROG.unlocked){
@@ -971,8 +1007,10 @@ btnWave.addEventListener('click',()=>{
 });
 function spawnEnemy(type){
   const E=ENEMIES[type],w=S.wave,M=MAPS[S.map];
+  const lane=S.laneIdx;S.laneIdx=(S.laneIdx+1)%LANES.length;
+  const way=LANES[lane].way;
   const hpMul=Math.pow(1.12,w-1)*(1+w*.025),spMul=(1+w*.008)*M.speedMul;
-  S.enemies.push({type,x:WAY[0].x,y:WAY[0].y,wp:1,ang:0,ph:Math.random()*7,
+  S.enemies.push({type,way,wp:1,x:way[0].x,y:way[0].y,ang:0,ph:Math.random()*7,
     hp:Math.round(E.hp*hpMul),maxhp:Math.round(E.hp*hpMul),
     spd:E.spd*spMul,r:E.r,gold:E.gold,dmg:E.dmg,c:E.c,
     slowT:0,slowF:1,prog:0,flash:0,trail:type==='fast'?[]:null,
@@ -1074,14 +1112,14 @@ function updateEnemy(e,dt){
   e.flash=Math.max(0,e.flash-dt*3);
   let rem=e.spd*(e.slowT>0?e.slowF:1)*dt;
   e.prog+=rem;
-  while(rem>0&&e.wp<WAY.length){
-    const t=WAY[e.wp],dx=t.x-e.x,dy=t.y-e.y,d=Math.hypot(dx,dy);
+  while(rem>0&&e.wp<e.way.length){
+    const t=e.way[e.wp],dx=t.x-e.x,dy=t.y-e.y,d=Math.hypot(dx,dy);
     e.ang=Math.atan2(dy,dx);
     if(d<=rem){e.x=t.x;e.y=t.y;e.wp++;rem-=d;}
     else{e.x+=dx/d*rem;e.y+=dy/d*rem;rem=0;}
   }
   if(e.trail){e.trail.push({x:e.x,y:e.y});if(e.trail.length>7)e.trail.shift();}
-  if(e.wp>=WAY.length){
+  if(e.wp>=e.way.length){
     e.leaked=true;S.lives-=e.dmg;S.flash=.45;S.shake=5;
     addText(BASE.x-30,BASE.y-30,'-'+e.dmg+' ❤','#ff5d5d');SFX.leak();
     if(S.lives<=0){S.lives=0;endGame(false);}
@@ -1180,13 +1218,15 @@ function banner(txt,boss){
 function drawChevrons(){
   const gap=85,off=(S.time*55)%gap;
   ctx.save();ctx.lineCap='round';
-  for(let d=off;d<PATHLEN;d+=gap){
-    const p=pointAt(d);
-    const fade=Math.max(0,Math.min(1,Math.min(d/80,(PATHLEN-d)/80)));
-    ctx.strokeStyle='rgba(240,220,160,'+(.4*fade)+')';ctx.lineWidth=2.5;
-    ctx.save();ctx.translate(p.x,p.y);ctx.rotate(p.ang);
-    ctx.beginPath();ctx.moveTo(-5,-6);ctx.lineTo(3,0);ctx.lineTo(-5,6);ctx.stroke();
-    ctx.restore();
+  for(const L of LANES){
+    for(let d=off;d<L.len;d+=gap){
+      const p=lanePoint(L,d);
+      const fade=Math.max(0,Math.min(1,Math.min(d/80,(L.len-d)/80)));
+      ctx.strokeStyle='rgba(240,220,160,'+(.4*fade)+')';ctx.lineWidth=2.5;
+      ctx.save();ctx.translate(p.x,p.y);ctx.rotate(p.ang);
+      ctx.beginPath();ctx.moveTo(-5,-6);ctx.lineTo(3,0);ctx.lineTo(-5,6);ctx.stroke();
+      ctx.restore();
+    }
   }
   ctx.restore();
 }
@@ -1265,7 +1305,7 @@ function render(){
   drawChevrons();
   for(const f of FOG){ctx.globalAlpha=.5;
     ctx.drawImage(GLOW.fog,f.x-f.r,f.y-f.r,f.r*2,f.r*2);ctx.globalAlpha=1;}
-  drawSpawn();drawBase();
+  drawSpawns();drawBase();
   if(S.buildType)drawBuildHints();
   if(S.selected)drawRange(S.selected.x,S.selected.y,S.selected.range,'rgba(255,176,46,');
   for(const t of S.towers)drawTower(t);
